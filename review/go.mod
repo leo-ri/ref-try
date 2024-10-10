@@ -6,7 +6,6 @@ require (
 	github.com/brumhard/alligotor v0.3.3
 	github.com/gin-gonic/gin v1.7.6
 	github.com/google/uuid v1.3.0
-	github.com/urfave/negroni v1.0.0
 )
 
 require (

@@ -1,8 +1,8 @@
 package api
 
 import (
+	// "context"
 	"context"
-	"coupon_service/internal/service/entity"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,12 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
-type Service interface {
-	ApplyCoupon(entity.Basket, string) (*entity.Basket, error)
-	CreateCoupon(int, string, int) any
-	GetCoupons([]string) ([]entity.Coupon, error)
-}
 
 type Config struct {
 	Host string
@@ -29,34 +23,27 @@ type API struct {
 	CFG Config
 }
 
-func New[T Service](cfg Config, svc T) API {
+func New(cfg Config, svc Service) API {
 	gin.SetMode(gin.ReleaseMode)
-	r := new(gin.Engine)
-	r = gin.New()
+	r := gin.New()
 	r.Use(gin.Recovery())
 
 	return API{
 		MUX: r,
 		CFG: cfg,
 		svc: svc,
-	}.withServer()
+	}.withServer().withRoutes()
 }
 
 func (a API) withServer() API {
-
-	ch := make(chan API)
-	go func() {
-		a.srv = &http.Server{
-			Addr:    fmt.Sprintf(":%d", a.CFG.Port),
-			Handler: a.MUX,
-		}
-		ch <- a
-	}()
-
-	return <-ch
+	a.srv = &http.Server{
+		Addr:    fmt.Sprintf(":%d", a.CFG.Port),
+		Handler: a.MUX,
+	}
+	return a
 }
 
-func (a API) withRoutes() API {
+func (a API) withRoutes() API { // TODO ??
 	apiGroup := a.MUX.Group("/api")
 	apiGroup.POST("/apply", a.Apply)
 	apiGroup.POST("/create", a.Create)
@@ -64,18 +51,20 @@ func (a API) withRoutes() API {
 	return a
 }
 
-func (a API) Start() {
+func (a API) Start() error {
 	if err := a.srv.ListenAndServe(); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
 
-func (a API) Close() {
-	<-time.After(5 * time.Second)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (a API) Close() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 
 	if err := a.srv.Shutdown(ctx); err != nil {
-		log.Println(err)
+		return err
 	}
+	log.Println("Server shutted down")
+	return nil
 }

@@ -7,37 +7,43 @@ import (
 	"github.com/google/uuid"
 )
 
-type Repository interface {
+type CouponRepository interface {
 	FindByCode(string) (*Coupon, error)
 	Save(Coupon) error
 }
 
+// ---------
+
 type Service struct {
-	repo Repository
+	repo CouponRepository
 }
 
-func New(repo Repository) Service {
+func New(repo CouponRepository) Service {
 	return Service{
 		repo: repo,
 	}
 }
 
-func (s Service) ApplyCoupon(basket Basket, code string) (b *Basket, e error) {
-	b = &basket
+func (s Service) ApplyCoupon(totalValue int, code string) (b *Basket, e error) {
+	b = &Basket{
+		Value:                 totalValue,
+		AppliedDiscount:       0,
+		ApplicationSuccessful: false,
+	}
 	coupon, err := s.repo.FindByCode(code)
 	if err != nil {
 		return nil, err
 	}
-
-	if b.Value > 0 {
+	if b.Value > coupon.MinBasketValue {
 		b.AppliedDiscount = coupon.Discount
 		b.ApplicationSuccessful = true
+		// b.Value = b.Value * b.AppliedDiscount / 100 // total discount? or
+		b.Value = totalValue - b.Value*b.AppliedDiscount/100 // total discount? or
 	}
-	if b.Value == 0 {
-		return
+	if b.Value < 0 {
+		return nil, fmt.Errorf("Tried to apply discount to negative value")
 	}
-
-	return nil, fmt.Errorf("Tried to apply discount to negative value")
+	return
 }
 
 func (s Service) CreateCoupon(discount int, code string, minBasketValue int) any {
@@ -54,6 +60,8 @@ func (s Service) CreateCoupon(discount int, code string, minBasketValue int) any
 	return nil
 }
 
+// ?? is this should be strict ? or we need to show all
+// lets assume show that we found
 func (s Service) GetCoupons(codes []string) ([]Coupon, error) {
 	coupons := make([]Coupon, 0, len(codes))
 	var e error = nil
@@ -66,9 +74,11 @@ func (s Service) GetCoupons(codes []string) ([]Coupon, error) {
 			} else {
 				e = fmt.Errorf("%w; code: %s, index: %d", e, code, idx)
 			}
+			continue
 		}
-		coupons = append(coupons, *coupon)
+		if coupon != nil {
+			coupons = append(coupons, *coupon)
+		}
 	}
-
 	return coupons, e
 }
