@@ -1,0 +1,42 @@
+###
+
+POST http://localhost:8080/api/create
+Content-Type: application/json
+
+{
+   "discount": 10,
+   "code": "code10",
+   "min_basket_value": 100
+}
+
+### 
+
+GET http://localhost:8080/api/coupons?code=code10&code=code20
+
+###
+
+GET http://localhost:8080/api/coupons?code=code10
+
+###
+
+GET http://localhost:8080/api/coupons?code=code30
+
+### Apply the discount to basket
+
+POST http://localhost:8080/api/apply
+Content-Type: application/json
+
+{
+   "code": "code10",
+   "basket_value": 1000
+}
+
+### Apply the discount to basket
+
+POST http://localhost:8080/api/apply
+Content-Type: application/json
+
+{
+   "code": "code10",
+   "basket_value": 50
+}

@@ -12,7 +12,12 @@ type Config struct {
 }
 
 func New() Config {
-	cfg := Config{}
+	cfg := Config{
+		API: api.Config{
+			Host: "localhost",
+			Port: 8080,
+		},
+	}
 	if err := alligotor.Get(&cfg); err != nil {
 		log.Fatal(err)
 	}
