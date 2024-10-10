@@ -19,11 +19,11 @@ var (
 	repo = memdb.New()
 )
 
-// func init() {
-// 	if 32 != runtime.NumCPU() {
-// 		panic("this api is meant to be run on 32 core machines")
-// 	}
-// }
+func init() {
+	if 32 != runtime.NumCPU() {
+		panic("this api is meant to be run on 32 core machines")
+	}
+}
 
 func init() {
 	cpu := runtime.NumCPU()
